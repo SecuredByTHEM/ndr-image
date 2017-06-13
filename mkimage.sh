@@ -49,7 +49,7 @@ dd if=/dev/zero of=$IMAGE_FILE bs=1048576 count=$SYSTEM_PARTITION_SIZE
 # Create our partitions in the disk image
 
 echo "=== Initializing filesystems ==="
-mkfs.ext4 $IMAGE_FILE
+mkfs.ext4 -F $IMAGE_FILE
 
 echo "=== Building root filesystem ==="
 # Create an installation chroot so we may load root-an
