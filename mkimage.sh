@@ -160,6 +160,7 @@ echo "=== Compressing output.img ==="
 rm -f $IMAGE_FILE.bz2
 bzip2 $IMAGE_FILE
 
+mkdir upload
 run_or_die "mv $IMAGE_FILE.bz2 upload/rootfs.img.bz2"
 
 echo "=== Building the boot kernel ==="
