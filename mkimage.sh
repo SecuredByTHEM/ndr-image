@@ -38,6 +38,9 @@ fi
 trap cleanup INT
 . ./functions
 
+echo "=== Make sure system utilities are there ==="
+run_or_die "which veritysetup"
+
 echo "=== Creating raw image ==="
 
 # BUG IN DD, bs is a signed 32-bit integer.

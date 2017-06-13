@@ -7,7 +7,7 @@ python:
   - 3.5
 
 install:
-  - sudo apt-get install git genisoimage debootstrap
+  - sudo apt-get install git genisoimage debootstrap cryptsetup-bin
 
 script:
   - sudo ./mkimage.sh -d development -b build_development
