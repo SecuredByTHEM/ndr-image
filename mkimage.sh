@@ -153,11 +153,7 @@ echo "=== Creating DM-Verity hashs ==="
 ROOT_HASH=`veritysetup format $IMAGE_FILE $HASH_BLOCK | grep Root\ hash | awk '{print $3}'`
 echo "ROOT_HASH=$ROOT_HASH" > $ROOT_HASH_FILE
 
-echo "=== Compressing output.img ==="
-rm -f $IMAGE_FILE.bz2
-bzip2 $IMAGE_FILE
-
-run_or_die "mv $IMAGE_FILE.bz2 upload/rootfs.img.bz2"
+mkdir upload
 
 echo "=== Building the boot kernel ==="
 bin/cook_kernel.sh -b $BUILD_DIR -d $NDR_CONFIG

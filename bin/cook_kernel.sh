@@ -49,7 +49,10 @@ mkdir -p upload
 run_or_die "cp $BUILD_DIR/buildroot/images/boot.efi upload/bootx64.efi"
 run_or_die "cp $BUILD_DIR/buildroot/images/boot_installer.efi upload/boot_installer.efi"
 
-rm -f upload/rootfs.img.bz2
+echo "=== Compressing output.img ==="
+rm -f $IMAGE_FILE.bz2
+bzip2 $IMAGE_FILE
+
 mv $IMAGE_FILE.bz2 upload/rootfs.img.bz2
 echo "$BUILD_TIME" > upload/ota.timestamp
 
