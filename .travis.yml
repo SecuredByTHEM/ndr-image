@@ -1,0 +1,15 @@
+dist: trusty
+sudo: true
+
+language: python
+
+python:
+  - 3.5
+
+install:
+  - apt-get install git genisoimage
+
+script:
+  - ./mkimage.sh -d development -b build_development
+
+
