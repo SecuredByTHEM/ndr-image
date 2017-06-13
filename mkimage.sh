@@ -38,6 +38,9 @@ fi
 trap cleanup INT
 . ./functions
 
+echo "=== Make sure system utilities are there ==="
+run_or_die "which veritysetup"
+
 echo "=== Creating raw image ==="
 
 # BUG IN DD, bs is a signed 32-bit integer.
@@ -49,7 +52,7 @@ dd if=/dev/zero of=$IMAGE_FILE bs=1048576 count=$SYSTEM_PARTITION_SIZE
 # Create our partitions in the disk image
 
 echo "=== Initializing filesystems ==="
-mkfs.ext4 $IMAGE_FILE
+mkfs.ext4 -F $IMAGE_FILE
 
 echo "=== Building root filesystem ==="
 # Create an installation chroot so we may load root-an
@@ -83,6 +86,9 @@ mkdir -p $ROOTFS_DIR/scratch
 pushd $ROOTFS_DIR/scratch
 git clone https://github.com/SecuredByTHEM/ndr.git
 git clone https://github.com/SecuredByTHEM/ndr-netcfg.git
+
+# This shouldn't be needed, but travis seems to require it
+#mkdir -p $ROOTFS/usr/lib/python3.5/site-packages/
 popd
 
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr && ./setup.py test && ./setup.py install"'
@@ -157,6 +163,7 @@ echo "=== Compressing output.img ==="
 rm -f $IMAGE_FILE.bz2
 bzip2 $IMAGE_FILE
 
+mkdir upload
 run_or_die "mv $IMAGE_FILE.bz2 upload/rootfs.img.bz2"
 
 echo "=== Building the boot kernel ==="
