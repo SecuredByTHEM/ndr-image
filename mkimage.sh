@@ -83,6 +83,9 @@ mkdir -p $ROOTFS_DIR/scratch
 pushd $ROOTFS_DIR/scratch
 git clone https://github.com/SecuredByTHEM/ndr.git
 git clone https://github.com/SecuredByTHEM/ndr-netcfg.git
+
+# This shouldn't be needed, but travis seems to require it
+mkdir -p $ROOTFS/usr/lib/python3.5/site-packages/
 popd
 
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr && ./setup.py test && ./setup.py install"'
