@@ -10,6 +10,7 @@ install:
   - sudo apt-get install git genisoimage debootstrap cryptsetup-bin
 
 script:
-  - sudo ./mkimage.sh -d development -b build_development
+  - sudo ./mkimage.sh -d development -b build_development > build.log
+  - tail -n1000 build.log
 
 
