@@ -1,0 +1,18 @@
+upload_method: uucp 
+upload:
+  ingest_uucp_host: ndr-dev-ingest
+  ingest_uucp_dir: /srv/dev.securedbythem.com/ingest/v1/incoming
+  enrollment_uucp_dir: /srv/dev.securedbythem.com/ingest/v1/enrollment
+
+nmap:
+ scan_interface: lan0
+
+ssl:
+ keyfile: /persistant/etc/ndr/cert.key
+ bundle: /persistant/etc/ndr/bundle.crt
+ certfile: /persistant/etc/ndr/cert.crt
+ csr: /persistant/etc/ndr/cert.csr
+ cafile: /etc/ndr/ca.crt
+
+snort:
+ traffic_directory: /persistant/snort/all-traffic/

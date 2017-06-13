@@ -1,0 +1,6 @@
+port TCP
+type tcp
+
+port ssl_ndr_dev_ingest
+type pipe
+command /usr/bin/openssl s_client -connect ingest.dev.securedbythem.com:suucp -quiet -fallback_scsv -verify_return_error -verify 3

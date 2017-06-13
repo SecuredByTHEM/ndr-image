@@ -1,0 +1,24 @@
+ROOTFS_DIR=$BUILD_DIR/rootfs
+IMAGE_FILE=$BUILD_DIR/output.img
+HASH_BLOCK=$BUILD_DIR/hash.block
+ROOT_HASH_FILE=$BUILD_DIR/root.hash
+
+IMAGE_CONFIG=configs/$NDR_CONFIG/image.config
+
+function cleanup() {
+    echo "=== Cleaning Up ==="
+    umount $BUILD_DIR/rootfs/proc
+    umount $BUILD_DIR/rootfs/sys
+    umount $BUILD_DIR/rootfs/dev/pts
+    umount $BUILD_DIR/rootfs/
+#    rm -r $BUILD_DIR
+    exit 1
+}
+
+function run_or_die() {
+    eval $1
+    if [ $? -ne 0 ]; then
+        echo "BAILING OUT: $1 failed"
+        cleanup
+    fi
+}

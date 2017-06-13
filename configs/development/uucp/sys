@@ -1,0 +1,11 @@
+protocol gvG
+protocol-parameter G packet-size 1024
+protocol-parameter G short-packets
+
+system sbt-dev-ingest
+call-login *
+call-password *
+time any
+protocol t
+port ssl_sbt_dev_ingest
+

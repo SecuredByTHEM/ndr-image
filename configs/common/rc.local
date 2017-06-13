@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Deal with the fact that system is a piece of crap and force the hostname to be
+# set on system boot since systemctl can't deal with hostname being a symlink
+
+hostname -F /etc/hostname
+exit 0
