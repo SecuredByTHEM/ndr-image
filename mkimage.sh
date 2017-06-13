@@ -43,7 +43,7 @@ echo "=== Creating raw image ==="
 # BUG IN DD, bs is a signed 32-bit integer.
 # use MB size
 rm -rf $ROOTFS_DIR
-mkdir -p $ROOTFS_DIR
+#mkdir -p $ROOTFS_DIR
 dd if=/dev/zero of=$IMAGE_FILE bs=1048576 count=$SYSTEM_PARTITION_SIZE
 
 # Create our partitions in the disk image
