@@ -43,7 +43,7 @@ echo "=== Creating raw image ==="
 # BUG IN DD, bs is a signed 32-bit integer.
 # use MB size
 rm -rf $ROOTFS_DIR
-#mkdir -p $ROOTFS_DIR
+mkdir -p $ROOTFS_DIR
 dd if=/dev/zero of=$IMAGE_FILE bs=1048576 count=$SYSTEM_PARTITION_SIZE
 
 # Create our partitions in the disk image
@@ -85,7 +85,7 @@ git clone https://github.com/SecuredByTHEM/ndr.git
 git clone https://github.com/SecuredByTHEM/ndr-netcfg.git
 
 # This shouldn't be needed, but travis seems to require it
-mkdir -p $ROOTFS/usr/lib/python3.5/site-packages/
+#mkdir -p $ROOTFS/usr/lib/python3.5/site-packages/
 popd
 
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr && ./setup.py test && ./setup.py install"'
