@@ -1,5 +1,7 @@
 #!/bin/bash
 
+BUILD_TIMESTAMP=`date +"%s"`
+
 CWD=`pwd`
 
 while getopts ":b:d:" opt; do
@@ -38,7 +40,7 @@ fi
 
 pushd $BUILD_DIR/buildroot
 git pull
-echo "CURRENT_IMAGE_BUILDTIME=$BUILD_TIME" > board/securedbythem/ndr_boot/rootfs_overlay/build.time
+echo "CURRENT_IMAGE_BUILDTIME=$BUILD_TIMESTAMP" > board/securedbythem/ndr_boot/rootfs_overlay/build.time
 run_or_die "cp $CWD/$HASH_BLOCK board/securedbythem/ndr_boot/rootfs_overlay"
 run_or_die "cp $CWD/$ROOT_HASH_FILE board/securedbythem/ndr_boot/rootfs_overlay"
 run_or_die "cp $CWD/$IMAGE_CONFIG board/securedbythem/ndr/image.config"
@@ -54,7 +56,7 @@ rm -f $IMAGE_FILE.bz2
 bzip2 $IMAGE_FILE
 
 mv $IMAGE_FILE.bz2 upload/rootfs.img.bz2
-echo "$BUILD_TIME" > upload/ota.timestamp
+echo "$BUILD_TIMESTAMP" > upload/ota.timestamp
 
 BOOT_IMG="/tmp/boot_installer.img"
 WORK_DIR=`mktemp -d`
