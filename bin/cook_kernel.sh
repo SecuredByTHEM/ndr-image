@@ -30,7 +30,6 @@ fi
 
 rm -f upload/*
 
-echo "CURRENT_IMAGE_BUILDTIME=$BUILD_TIME" > buildroot/board/securedbythem/ndr_boot/rootfs_overlay/build.time
 
 echo "=== Checking Out Buildroot ==="
 if [ ! -d $BUILD_DIR/buildroot ]; then
@@ -39,6 +38,7 @@ fi
 
 pushd $BUILD_DIR/buildroot
 git pull
+echo "CURRENT_IMAGE_BUILDTIME=$BUILD_TIME" > board/securedbythem/ndr_boot/rootfs_overlay/build.time
 run_or_die "cp $CWD/$HASH_BLOCK board/securedbythem/ndr_boot/rootfs_overlay"
 run_or_die "cp $CWD/$ROOT_HASH_FILE board/securedbythem/ndr_boot/rootfs_overlay"
 run_or_die "cp $CWD/$IMAGE_CONFIG board/securedbythem/ndr/image.config"
