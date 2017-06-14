@@ -1,8 +1,8 @@
 upload_method: uucp 
 upload:
-  ingest_uucp_host: ndr-dev-ingest
-  ingest_uucp_dir: /srv/dev.securedbythem.com/ingest/v1/incoming
-  enrollment_uucp_dir: /srv/dev.securedbythem.com/ingest/v1/enrollment
+  ingest_uucp_host: sbt-dev-ingest
+  ingest_uucp_dir: /srv/ingest.dev.securedbythem.com/v1/incoming
+  enrollment_uucp_dir: /srv/ingest.dev.securedbythem.com/v1/enrollment
 
 nmap:
  scan_interface: lan0
