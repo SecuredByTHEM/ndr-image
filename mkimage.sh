@@ -5,7 +5,7 @@ MIRROR=http://us.archive.ubuntu.com/ubuntu
 BUILD_TIME=`date`
 
 SYSTEM_PARTITION_SIZE=2048
-INSTALLATION_PACKAGES="ca-certificates uucp nmap snort syslog-ng dhcpcd5 openssh-server"
+INSTALLATION_PACKAGES="ca-certificates uucp nmap snort syslog-ng dhcpcd5"
 DEVELOPMENT_PACKAGES="python3-setuptools build-essential python3-dev libffi-dev libssl-dev"
 MOUNT_POINT=mnt
 
@@ -26,6 +26,8 @@ if [ -z $NDR_CONFIG ]; then
     echo "NDR distribution (-d) must be selected"
     exit 1
 fi
+
+. ./configs/$NDR_CONFIG/image.config
 
 # Make debconf shut up
 export DEBIAN_FRONTEND=noninteractive
@@ -81,12 +83,23 @@ echo "=== Installing NDR ==="
 # Use the system git to download the source code from the repo
 mkdir -p $ROOTFS_DIR/scratch
 pushd $ROOTFS_DIR/scratch
-git clone https://github.com/SecuredByTHEM/ndr.git
-git clone https://github.com/SecuredByTHEM/ndr-netcfg.git
+git clone $NDR_REPO -b $NDR_BRANCH ndr
+git clone $NDR_NETCFG_REPO -b $NDR_NETCFG_BRANCH ndr-netcfg
 popd
 
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr && ./setup.py test && ./setup.py install"'
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr-netcfg && ./setup.py test && ./setup.py install"'
+
+echo "=== Install NDR System Configuration Files ==="
+# We may want to move this to a script in the ndr-client directory
+run_or_die "cp $ROOTFS_DIR/scratch/ndr/sysconfig/logrotate/ndr $ROOTFS_DIR/etc/logrotate.d/"
+run_or_die "cp $ROOTFS_DIR/scratch/ndr/sysconfig/cron/ndr $ROOTFS_DIR/etc/cron.d/"
+run_or_die "cp $ROOTFS_DIR/scratch/ndr/sysconfig/syslog-ng/ndr.conf $ROOTFS_DIR/etc/syslog-ng/conf.d/"
+
+# Install the sudoers file to allow enlistment to work
+run_or_die "cp $ROOTFS_DIR/scratch/ndr/sysconfig/sudoers/ndr $ROOTFS_DIR/etc/sudoers.d/ndr"
+run_or_die "chown root:root $ROOTFS_DIR/etc/sudoers.d/ndr"
+run_or_die "chmod 0600 $ROOTFS_DIR/etc/sudoers.d/ndr"
 
 # Install the unit file and enable it
 cp $ROOTFS_DIR/scratch/ndr-netcfg/systemd/ndr-netcfg.service $ROOTFS_DIR/etc/systemd/system
@@ -134,6 +147,7 @@ run_or_die "cp configs/$NDR_CONFIG/ndr/ca.crt $ROOTFS_DIR/etc/ndr"
 run_or_die "cp configs/$NDR_CONFIG/uucp/call $ROOTFS_DIR/etc/uucp/call"
 run_or_die "cp configs/$NDR_CONFIG/uucp/port $ROOTFS_DIR/etc/uucp/port"
 run_or_die "cp configs/$NDR_CONFIG/uucp/sys $ROOTFS_DIR/etc/uucp/sys"
+run_or_die "cp configs/$NDR_CONFIG/cron/uucp $ROOTFS_DIR/etc/cron.d/uucp"
 
 # Copy in rc.local
 cp configs/common/rc.local $ROOTFS_DIR/etc/rc.local
