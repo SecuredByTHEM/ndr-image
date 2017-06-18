@@ -83,8 +83,8 @@ echo "=== Installing NDR ==="
 # Use the system git to download the source code from the repo
 mkdir -p $ROOTFS_DIR/scratch
 pushd $ROOTFS_DIR/scratch
-git clone $NDR_REPO -b $NDR_BRANCH ndr
 git clone $NDR_NETCFG_REPO -b $NDR_NETCFG_BRANCH ndr-netcfg
+git clone $NDR_REPO -b $NDR_BRANCH ndr
 popd
 
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr && ./setup.py test && ./setup.py install"'
