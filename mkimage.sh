@@ -113,9 +113,15 @@ rm $ROOTFS_DIR/var/cache/apt/archives/*.deb
 echo "=== Setting root password ==="
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "echo root:password | chpasswd"'
 
+echo "=== Disabling unwanted unit files ==="
+run_or_die "chroot $ROOTFS_DIR systemctl disable ndr-netcfg.service"
+
 # Create symlinks to persistance directory for host/hostname
 run_or_die 'chroot $ROOTFS_DIR ln -sf /persistant/etc/hosts /etc/hosts'
 run_or_die 'chroot $ROOTFS_DIR ln -sf /persistant/etc/hostname /etc/hostname'
+
+# And another for the DHCP DUID (see rant in NDR installation script in buildroot)
+run_or_die 'chroot $ROOTFS_DIR ln -sf /persistant/etc/dhcpcd.duid /etc/dhcpcd.duid'
 
 # Removing unneeded packages
 echo "=== Removing Development Packages ==="
