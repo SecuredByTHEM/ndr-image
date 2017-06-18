@@ -87,8 +87,8 @@ git clone $NDR_NETCFG_REPO -b $NDR_NETCFG_BRANCH ndr-netcfg
 git clone $NDR_REPO -b $NDR_BRANCH ndr
 popd
 
-run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr && ./setup.py test && ./setup.py install"'
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr-netcfg && ./setup.py test && ./setup.py install"'
+run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr && ./setup.py test && ./setup.py install"'
 
 echo "=== Install NDR System Configuration Files ==="
 # We may want to move this to a script in the ndr-client directory
