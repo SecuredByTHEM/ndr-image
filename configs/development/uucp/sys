@@ -8,4 +8,4 @@ call-password *
 time any
 protocol t
 port ssl_sbt_dev_ingest
-
+commands ndr-process-message
