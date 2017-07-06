@@ -5,9 +5,12 @@ MIRROR=http://us.archive.ubuntu.com/ubuntu
 BUILD_TIME=`date`
 
 SYSTEM_PARTITION_SIZE=2048
-INSTALLATION_PACKAGES="ca-certificates uucp nmap snort syslog-ng dhcpcd5"
-DEVELOPMENT_PACKAGES="python3-setuptools build-essential python3-dev libffi-dev libssl-dev"
+INSTALLATION_PACKAGES="ca-certificates uucp nmap syslog-ng dhcpcd5"
+DEVELOPMENT_PACKAGES="python3-setuptools build-essential python3-dev libffi-dev libssl-dev libpcap-dev libpcre3-dev libdumbnet-dev flex bison"
 MOUNT_POINT=mnt
+
+DAQ_URL="https://snort.org/downloads/snort/daq-2.0.6.tar.gz"
+SNORT_URL="https://snort.org/downloads/snort/snort-2.9.9.0.tar.gz"
 
 while getopts ":d:b:" opt; do
     case $opt in
@@ -78,11 +81,23 @@ run_or_die "chroot $ROOTFS_DIR locale-gen en_US.UTF-8"
 echo "=== Installing packages ==="
 run_or_die "chroot $ROOTFS_DIR apt-get -y install $INSTALLATION_PACKAGES $DEVELOPMENT_PACKAGES"
 
+mkdir -p $ROOTFS_DIR/scratch
+
+echo "=== Building SNORT ==="
+run_or_die 'curl -L $DAQ_URL -o $ROOTFS_DIR/scratch/daq.tar.gz'
+tar zxvf $ROOTFS_DIR/scratch/daq.tar.gz -C $ROOTFS_DIR/scratch
+run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/daq* && ./configure --prefix=/usr && make && make install"'
+
+run_or_die 'curl -L $SNORT_URL -o $ROOTFS_DIR/scratch/snort.tar.gz'
+tar zxvf $ROOTFS_DIR/scratch/snort.tar.gz -C $ROOTFS_DIR/scratch
+run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/snort* && ./configure --prefix=/usr && make && make install"'
+
+
 echo "=== Installing NDR ==="
 
-# Use the system git to download the source code from the repo
-mkdir -p $ROOTFS_DIR/scratch
 pushd $ROOTFS_DIR/scratch
+
+# Use the system git to download the source code from the repo
 git clone $NDR_NETCFG_REPO -b $NDR_NETCFG_BRANCH ndr-netcfg
 git clone $NDR_REPO -b $NDR_BRANCH ndr
 popd
@@ -101,27 +116,45 @@ run_or_die "cp $ROOTFS_DIR/scratch/ndr/sysconfig/sudoers/ndr $ROOTFS_DIR/etc/sud
 run_or_die "chown root:root $ROOTFS_DIR/etc/sudoers.d/ndr"
 run_or_die "chmod 0600 $ROOTFS_DIR/etc/sudoers.d/ndr"
 
-# Install the unit file and enable it
-cp $ROOTFS_DIR/scratch/ndr-netcfg/systemd/ndr-netcfg.service $ROOTFS_DIR/etc/systemd/system
-run_or_die "chroot $ROOTFS_DIR systemctl enable ndr-netcfg.service"
-
-# Remove the unwanted floatism
-echo "=== Reducing image size ==="
-rm -rf $ROOTFS_DIR/scratch
-rm $ROOTFS_DIR/var/cache/apt/archives/*.deb
-
 echo "=== Setting root password ==="
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "echo root:password | chpasswd"'
 
-echo "=== Disabling unwanted unit files ==="
-run_or_die "chroot $ROOTFS_DIR systemctl disable ndr-netcfg.service"
-
+echo "=== Setting up configuration files ==="
 # Create symlinks to persistance directory for host/hostname
 run_or_die 'chroot $ROOTFS_DIR ln -sf /persistant/etc/hosts /etc/hosts'
 run_or_die 'chroot $ROOTFS_DIR ln -sf /persistant/etc/hostname /etc/hostname'
 
 # And another for the DHCP DUID (see rant in NDR installation script in buildroot)
 run_or_die 'chroot $ROOTFS_DIR ln -sf /persistant/etc/dhcpcd.duid /etc/dhcpcd.duid'
+
+# Build the snort configuration files
+mkdir -p $ROOTFS_DIR/etc/snort/rules
+
+# Create the snort user
+run_or_die "chroot $ROOTFS_DIR adduser --system --group snort --no-create-home"
+
+# Copy some common files from the snort build directory
+run_or_die "cp $ROOTFS_DIR/scratch/snort*/etc/classification.config $ROOTFS_DIR/etc/snort"
+run_or_die "cp $ROOTFS_DIR/scratch/snort*/etc/file_magic.conf $ROOTFS_DIR/etc/snort"
+run_or_die "cp $ROOTFS_DIR/scratch/snort*/etc/reference.config $ROOTFS_DIR/etc/snort"
+run_or_die "cp $ROOTFS_DIR/scratch/snort*/etc/unicode.map $ROOTFS_DIR/etc/snort"
+
+# Build all traffic config file
+run_or_die 'cat configs/common/snort/common.conf configs/common/snort/all-traffic.conf > $ROOTFS_DIR/etc/snort/snort-all-traffic.conf'
+run_or_die 'cp configs/common/snort/all-traffic.rules $ROOTFS_DIR/etc/snort/rules/all-traffic.rules'
+run_or_die 'cp configs/common/snort/all-traffic.service $ROOTFS_DIR/lib/systemd/system/snort-all-traffic.service'
+run_or_die "chroot $ROOTFS_DIR systemctl enable snort-all-traffic.service"
+
+# Build community rules config file
+run_or_die 'cat configs/common/snort/common.conf configs/common/snort/community.conf > $ROOTFS_DIR/etc/snort/snort-community.conf'
+run_or_die 'cp configs/common/snort/community.rules $ROOTFS_DIR/etc/snort/rules/community.rules'
+run_or_die 'cp configs/common/snort/community.service $ROOTFS_DIR/lib/systemd/system/snort-community.service'
+run_or_die "chroot $ROOTFS_DIR systemctl enable snort-community.service"
+
+# Remove the unwanted floatism
+echo "=== Reducing image size ==="
+rm -rf $ROOTFS_DIR/scratch
+rm $ROOTFS_DIR/var/cache/apt/archives/*.deb
 
 # Removing unneeded packages
 echo "=== Removing Development Packages ==="
@@ -162,6 +195,11 @@ echo "=== Writing out the fstab ==="
 mkdir $ROOTFS_DIR/persistant
 echo "tmpfs			/tmp        	tmpfs   nodev,nosuid,noexec,size=16M	0 0" >> $ROOTFS_DIR/etc/fstab
 echo "tmpfs			/run    	tmpfs   nodev,nosuid,noexec,size=16M	0 0" >> $ROOTFS_DIR/etc/fstab
+
+echo "Writing information about the image"
+
+echo "build_date: `date +\"%s\"`" > $ROOTFS/etc/ndr/image_info.yml
+echo "image_type: $NDR_CONFIG" >> $ROOTFS/etc/ndr/image_info.yml
 
 echo "=== Copying build tree to the boot disk ==="
 run_or_die "mount $IMAGE_FILE $MOUNT_POINT"

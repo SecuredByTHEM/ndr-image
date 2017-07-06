@@ -1,0 +1,2 @@
+# Snort rule to capture all traffic
+alert ip any any -> any any (classtype:not-suspicious; sid:9000000)

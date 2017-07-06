@@ -1,0 +1,17 @@
+[Unit]
+Description=Snort Community service
+After=syslog-ng.service network.target
+
+[Service]
+Type=simple
+PIDFile=/run/snort-community/snort1.pid
+ExecStartPre=/bin/mkdir -p /persistant/snort/community
+ExecStartPre=/bin/chown snort:snort -R /persistant/snort/
+ExecStartPre=/bin/mkdir -p /run/snort-community
+ExecStartPre=/bin/chown snort:snort -R /run/snort-community
+ExecStart=/usr/bin/snort -D -u snort -g snort -c /etc/snort/snort-community.conf -i monitor0 -N -R 1 --pid-path=/run/snort-community --no-interface-pidfile --nolock-pidfile
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+

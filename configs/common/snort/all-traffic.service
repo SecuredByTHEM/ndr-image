@@ -1,0 +1,17 @@
+[Unit]
+Description=Snort All Traffic service
+After=syslog-ng.service network.target
+
+[Service]
+Type=simple
+PIDFile=/run/snort-all-traffic/snort1.pid
+ExecStartPre=/bin/mkdir -p /persistant/snort/all-traffic
+ExecStartPre=/bin/chown snort:snort -R /persistant/snort/
+ExecStartPre=/bin/mkdir -p /run/snort-all-traffic
+ExecStartPre=/bin/chown snort:snort -R /run/snort-all-traffic
+ExecStart=/usr/bin/snort -D -u snort -g snort -c /etc/snort/snort-all-traffic.conf -i monitor0 -N -R 1 --pid-path=/run/snort-all-traffic --no-interface-pidfile --nolock-pidfile
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+
