@@ -3,10 +3,11 @@
 CODENAME=xenial
 MIRROR=http://us.archive.ubuntu.com/ubuntu
 BUILD_TIME=`date`
+BUILD_TIMESTAMP=`date +"%s"`
 
 SYSTEM_PARTITION_SIZE=2048
-INSTALLATION_PACKAGES="ca-certificates uucp nmap syslog-ng dhcpcd5"
-DEVELOPMENT_PACKAGES="python3-setuptools build-essential python3-dev libffi-dev libssl-dev libpcap-dev libpcre3-dev libdumbnet-dev flex bison"
+INSTALLATION_PACKAGES="ca-certificates uucp nmap syslog-ng dhcpcd5 libdumbnet1 libpython3.5 python3-pkg-resources python3-setuptools"
+DEVELOPMENT_PACKAGES="build-essential python3-dev libffi-dev libssl-dev libpcap-dev libpcre3-dev libdumbnet-dev flex bison"
 MOUNT_POINT=mnt
 
 DAQ_URL="https://snort.org/downloads/snort/daq-2.0.6.tar.gz"
@@ -151,6 +152,9 @@ run_or_die 'cp configs/common/snort/community.rules $ROOTFS_DIR/etc/snort/rules/
 run_or_die 'cp configs/common/snort/community.service $ROOTFS_DIR/lib/systemd/system/snort-community.service'
 run_or_die "chroot $ROOTFS_DIR systemctl enable snort-community.service"
 
+# Disable postfix port 25 service
+run_or_die "chroot $ROOTFS_DIR systemctl disable postfix.service"
+
 # Remove the unwanted floatism
 echo "=== Reducing image size ==="
 rm -rf $ROOTFS_DIR/scratch
@@ -159,6 +163,12 @@ rm $ROOTFS_DIR/var/cache/apt/archives/*.deb
 # Removing unneeded packages
 echo "=== Removing Development Packages ==="
 run_or_die 'chroot $ROOTFS_DIR bash -c "apt-get remove -y $DEVELOPMENT_PACKAGES lib*dev *doc"'
+
+echo "=== Dump ureadahead ==="
+run_or_die "chroot $ROOTFS_DIR apt-get -y remove ureadahead"
+
+echo "=== Dump ureadahead ==="
+run_or_die "chroot $ROOTFS_DIR apt-get -y autoremove"
 
 # Mount root-a and copy stuff there
 echo "=== Copying files into image ==="
@@ -196,10 +206,11 @@ mkdir $ROOTFS_DIR/persistant
 echo "tmpfs			/tmp        	tmpfs   nodev,nosuid,noexec,size=16M	0 0" >> $ROOTFS_DIR/etc/fstab
 echo "tmpfs			/run    	tmpfs   nodev,nosuid,noexec,size=16M	0 0" >> $ROOTFS_DIR/etc/fstab
 
-echo "Writing information about the image"
+echo "=== Writing information about the image ==="
 
-echo "build_date: `date +\"%s\"`" > $ROOTFS/etc/ndr/image_info.yml
-echo "image_type: $NDR_CONFIG" >> $ROOTFS/etc/ndr/image_info.yml
+echo "build_date: $BUILD_TIMESTAMP" > $ROOTFS_DIR/etc/ndr/image_info.yml
+echo "image_type: $NDR_CONFIG" >> $ROOTFS_DIR/etc/ndr/image_info.yml
+echo $BUILD_TIMESTAMP > $BUILD_DIR/ota.timestamp
 
 echo "=== Copying build tree to the boot disk ==="
 run_or_die "mount $IMAGE_FILE $MOUNT_POINT"

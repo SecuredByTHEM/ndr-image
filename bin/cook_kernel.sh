@@ -1,7 +1,5 @@
 #!/bin/bash
 
-BUILD_TIMESTAMP=`date +"%s"`
-
 CWD=`pwd`
 
 while getopts ":b:d:" opt; do
@@ -38,9 +36,9 @@ if [ ! -d $BUILD_DIR/buildroot ]; then
     git clone $BUILDROOT_REPO -b $BUILDROOT_BRANCH $BUILD_DIR/buildroot
 fi
 
+echo "CURRENT_IMAGE_BUILDTIME=`cat $BUILD_DIR/ota.timestamp`" > $BUILD_DIR/buildroot/board/securedbythem/ndr_boot/rootfs_overlay/build.time
 pushd $BUILD_DIR/buildroot
 git pull
-echo "CURRENT_IMAGE_BUILDTIME=$BUILD_TIMESTAMP" > board/securedbythem/ndr_boot/rootfs_overlay/build.time
 run_or_die "cp $CWD/$HASH_BLOCK board/securedbythem/ndr_boot/rootfs_overlay"
 run_or_die "cp $CWD/$ROOT_HASH_FILE board/securedbythem/ndr_boot/rootfs_overlay"
 run_or_die "cp $CWD/$IMAGE_CONFIG board/securedbythem/ndr/image.config"
@@ -56,10 +54,11 @@ rm -f $IMAGE_FILE.bz2
 bzip2 $IMAGE_FILE
 
 mv $IMAGE_FILE.bz2 upload/rootfs.img.bz2
-echo "$BUILD_TIMESTAMP" > upload/ota.timestamp
 
 BOOT_IMG="/tmp/boot_installer.img"
 WORK_DIR=`mktemp -d`
+
+run_or_die "cp $BUILD_DIR/ota.timestamp upload/"
 
 run_or_die "dd if=/dev/zero of=$BOOT_IMG bs=1MiB count=64"
 run_or_die "mkfs.vfat -F 32 $BOOT_IMG"
