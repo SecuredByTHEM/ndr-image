@@ -6,7 +6,7 @@ BUILD_TIME=`date`
 BUILD_TIMESTAMP=`date +"%s"`
 
 SYSTEM_PARTITION_SIZE=2048
-INSTALLATION_PACKAGES="ca-certificates uucp nmap syslog-ng dhcpcd5 libdumbnet1 libpython3.5 python3-pkg-resources python3-setuptools"
+INSTALLATION_PACKAGES="ca-certificates uucp nmap syslog-ng dhcpcd5 libdumbnet1 libpython3.5 python3-pkg-resources python3-setuptools joe nano"
 DEVELOPMENT_PACKAGES="build-essential python3-dev libffi-dev libssl-dev libpcap-dev libpcre3-dev libdumbnet-dev flex bison"
 MOUNT_POINT=mnt
 
