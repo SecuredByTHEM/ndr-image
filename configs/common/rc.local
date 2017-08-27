@@ -4,4 +4,10 @@
 # set on system boot since systemctl can't deal with hostname being a symlink
 
 hostname -F /etc/hostname
+
+# HACK!
+# Drop the execute queues for UUCP to prevent bootlooping in case uuxqt
+# fails the reboot message
+rm -rf /var/spool/uucp/*/X.
+
 exit 0

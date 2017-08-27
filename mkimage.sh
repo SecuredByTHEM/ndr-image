@@ -6,12 +6,13 @@ BUILD_TIME=`date`
 BUILD_TIMESTAMP=`date +"%s"`
 
 SYSTEM_PARTITION_SIZE=2048
-INSTALLATION_PACKAGES="ca-certificates uucp nmap syslog-ng dhcpcd5 libdumbnet1 libpython3.5 python3-pkg-resources python3-setuptools joe nano"
+INSTALLATION_PACKAGES="ca-certificates uucp syslog-ng dhcpcd5 libdumbnet1 libpython3.5 python3-pkg-resources python3-setuptools joe nano libpcap0.8"
 DEVELOPMENT_PACKAGES="build-essential python3-dev libffi-dev libssl-dev libpcap-dev libpcre3-dev libdumbnet-dev flex bison"
 MOUNT_POINT=mnt
 
 DAQ_URL="https://snort.org/downloads/snort/daq-2.0.6.tar.gz"
 SNORT_URL="https://snort.org/downloads/snort/snort-2.9.9.0.tar.gz"
+NMAP_URL="https://nmap.org/dist/nmap-7.60.tar.bz2"
 
 while getopts ":d:b:" opt; do
     case $opt in
@@ -93,6 +94,10 @@ run_or_die 'curl -L $SNORT_URL -o $ROOTFS_DIR/scratch/snort.tar.gz'
 tar zxvf $ROOTFS_DIR/scratch/snort.tar.gz -C $ROOTFS_DIR/scratch
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/snort* && ./configure --prefix=/usr && make && make install"'
 
+echo "=== Buildinging NMAP ==="
+run_or_die 'curl -L $NMAP_URL -o $ROOTFS_DIR/scratch/nmap.tar.bz2'
+tar jxvf $ROOTFS_DIR/scratch/nmap.tar.bz2 -C $ROOTFS_DIR/scratch
+run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/nmap* && ./configure --prefix=/usr && make && make install"'
 
 echo "=== Installing NDR ==="
 
