@@ -1,0 +1,13 @@
+[Unit]
+Description=TCP Dump Service
+After=syslog-ng.service network.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/mkdir -p /persistant/tcpdump/all-traffic
+ExecStart=/usr/sbin/tcpdump -w /persistant/tcpdump/all-traffic/all-traffic-%Y-%M-%d_%H.%M.%S.pcap -G 900 -i lan0
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+

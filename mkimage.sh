@@ -6,8 +6,8 @@ BUILD_TIME=`date`
 BUILD_TIMESTAMP=`date +"%s"`
 
 SYSTEM_PARTITION_SIZE=2048
-INSTALLATION_PACKAGES="ca-certificates uucp syslog-ng dhcpcd5 libdumbnet1 libpython3.5 python3-pkg-resources python3-setuptools joe nano libpcap0.8"
-DEVELOPMENT_PACKAGES="build-essential python3-dev libffi-dev libssl-dev libpcap-dev libpcre3-dev libdumbnet-dev flex bison"
+INSTALLATION_PACKAGES="ca-certificates uucp syslog-ng dhcpcd5 libdumbnet1 libpython3.5 python3-pkg-resources python3-setuptools joe nano libpcap0.8 libc-ares2 tcpdump python-minimal libgcrypt20 libglib2.0-0"
+DEVELOPMENT_PACKAGES="build-essential python3-dev libffi-dev libssl-dev libpcap-dev libpcre3-dev libdumbnet-dev flex bison libc-ares-dev autoconf automake libtool pkg-config libtool-bin libgcrypt-dev libglib2.0-dev"
 MOUNT_POINT=mnt
 
 DAQ_URL="https://snort.org/downloads/snort/daq-2.0.6.tar.gz"
@@ -94,19 +94,24 @@ run_or_die 'curl -L $SNORT_URL -o $ROOTFS_DIR/scratch/snort.tar.gz'
 tar zxvf $ROOTFS_DIR/scratch/snort.tar.gz -C $ROOTFS_DIR/scratch
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/snort* && ./configure --prefix=/usr && make && make install"'
 
-echo "=== Buildinging NMAP ==="
+echo "=== Building NMAP ==="
 run_or_die 'curl -L $NMAP_URL -o $ROOTFS_DIR/scratch/nmap.tar.bz2'
 tar jxvf $ROOTFS_DIR/scratch/nmap.tar.bz2 -C $ROOTFS_DIR/scratch
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/nmap* && ./configure --prefix=/usr && make && make install"'
+
 
 echo "=== Installing NDR ==="
 
 pushd $ROOTFS_DIR/scratch
 
 # Use the system git to download the source code from the repo
-git clone $NDR_NETCFG_REPO -b $NDR_NETCFG_BRANCH ndr-netcfg
-git clone $NDR_REPO -b $NDR_BRANCH ndr
+run_or_die 'git clone $NDR_TSHARK_REPO -b $NDR_TSHARK_BRANCH ndr-tshark'
+run_or_die 'git clone $NDR_NETCFG_REPO -b $NDR_NETCFG_BRANCH ndr-netcfg'
+run_or_die 'git clone $NDR_REPO -b $NDR_BRANCH ndr'
 popd
+
+echo "=== Building NDR-TShark ==="
+run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr-tshark && ./autogen.sh && ./configure --prefix=/usr --disable-wireshark --with-c-ares=/usr && make && make install"'
 
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr-netcfg && ./setup.py test && ./setup.py install"'
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr && ./setup.py test && ./setup.py install"'
@@ -145,17 +150,15 @@ run_or_die "cp $ROOTFS_DIR/scratch/snort*/etc/file_magic.conf $ROOTFS_DIR/etc/sn
 run_or_die "cp $ROOTFS_DIR/scratch/snort*/etc/reference.config $ROOTFS_DIR/etc/snort"
 run_or_die "cp $ROOTFS_DIR/scratch/snort*/etc/unicode.map $ROOTFS_DIR/etc/snort"
 
-# Build all traffic config file
-run_or_die 'cat configs/common/snort/common.conf configs/common/snort/all-traffic.conf > $ROOTFS_DIR/etc/snort/snort-all-traffic.conf'
-run_or_die 'cp configs/common/snort/all-traffic.rules $ROOTFS_DIR/etc/snort/rules/all-traffic.rules'
-run_or_die 'cp configs/common/snort/all-traffic.service $ROOTFS_DIR/lib/systemd/system/snort-all-traffic.service'
-run_or_die "chroot $ROOTFS_DIR systemctl enable snort-all-traffic.service"
-
 # Build community rules config file
 run_or_die 'cat configs/common/snort/common.conf configs/common/snort/community.conf > $ROOTFS_DIR/etc/snort/snort-community.conf'
 run_or_die 'cp configs/common/snort/community.rules $ROOTFS_DIR/etc/snort/rules/community.rules'
 run_or_die 'cp configs/common/snort/community.service $ROOTFS_DIR/lib/systemd/system/snort-community.service'
 run_or_die "chroot $ROOTFS_DIR systemctl enable snort-community.service"
+
+# Install the TCPDUMP service
+run_or_die 'cp configs/common/tcpdump/tcpdump-monitor.service $ROOTFS_DIR/lib/systemd/system/tcpdump-monitor.service'
+run_or_die "chroot $ROOTFS_DIR systemctl enable tcpdump-monitor.service"
 
 # Disable postfix port 25 service
 run_or_die "chroot $ROOTFS_DIR systemctl disable postfix.service"
@@ -163,6 +166,7 @@ run_or_die "chroot $ROOTFS_DIR systemctl disable postfix.service"
 # Remove the unwanted floatism
 echo "=== Reducing image size ==="
 rm -rf $ROOTFS_DIR/scratch
+rm -rf $ROOTFS_DIR/tmp/*
 rm $ROOTFS_DIR/var/cache/apt/archives/*.deb
 
 # Removing unneeded packages

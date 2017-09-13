@@ -60,6 +60,7 @@ WORK_DIR=`mktemp -d`
 
 run_or_die "cp $BUILD_DIR/ota.timestamp upload/"
 
+# Build the installer image
 run_or_die "dd if=/dev/zero of=$BOOT_IMG bs=1MiB count=64"
 run_or_die "mkfs.vfat -F 32 $BOOT_IMG"
 run_or_die "mount $BOOT_IMG $WORK_DIR"
