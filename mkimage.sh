@@ -32,6 +32,11 @@ if [ -z $NDR_CONFIG ]; then
     exit 1
 fi
 
+if [ -z $NDR_ROOT_PASSWORD ]; then
+    echo 'Env variable $NDR_ROOT_PASSWORD must be set'
+    exit 1
+fi
+
 . ./configs/$NDR_CONFIG/image.config
 
 # Make debconf shut up
@@ -111,8 +116,7 @@ run_or_die 'git clone $NDR_REPO -b $NDR_BRANCH ndr'
 popd
 
 echo "=== Building NDR-TShark ==="
-run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr-tshark && ./autogen.sh && ./configure --prefix=/usr --disable-wireshark --with-c-ares=/usr && make && make install"'
-
+run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr-tshark && ./autogen.sh && ./configure --prefix=/opt/tshark-ndr --disable-wireshark --with-c-ares=/usr && make && make install"'
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr-netcfg && ./setup.py test && ./setup.py install"'
 run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "cd /scratch/ndr && ./setup.py test && ./setup.py install"'
 
@@ -128,12 +132,13 @@ run_or_die "chown root:root $ROOTFS_DIR/etc/sudoers.d/ndr"
 run_or_die "chmod 0600 $ROOTFS_DIR/etc/sudoers.d/ndr"
 
 echo "=== Setting root password ==="
-run_or_die 'chroot $ROOTFS_DIR /bin/bash -c "echo root:password | chpasswd"'
+run_or_die "chroot $ROOTFS_DIR /bin/bash -c \"echo 'root:$NDR_ROOT_PASSWORD' | chpasswd\""
 
 echo "=== Setting up configuration files ==="
 # Create symlinks to persistance directory for host/hostname
 run_or_die 'chroot $ROOTFS_DIR ln -sf /persistant/etc/hosts /etc/hosts'
 run_or_die 'chroot $ROOTFS_DIR ln -sf /persistant/etc/hostname /etc/hostname'
+run_or_die 'chroot $ROOTFS_DIR ln -sf /persistant/etc/dhcpcd.secret /etc/dhcpcd.secret'
 
 # And another for the DHCP DUID (see rant in NDR installation script in buildroot)
 run_or_die 'chroot $ROOTFS_DIR ln -sf /persistant/etc/dhcpcd.duid /etc/dhcpcd.duid'
@@ -198,6 +203,13 @@ echo "Secured By THEM Network Data Recorder $BUILD_TIME \n \l" > $ROOTFS_DIR/etc
 # Delete the Ubuntu documentation string
 rm $ROOTFS_DIR/etc/update-motd.d/10-help-text
 
+# Delete the daily uudaemon run
+run_or_die "chroot $ROOTFS_DIR rm /etc/cron.daily/apt-compat"
+run_or_die "chroot $ROOTFS_DIR rm /etc/cron.daily/dpkg"
+run_or_die "chroot $ROOTFS_DIR rm /etc/cron.daily/uucp"
+
+# Create the NDR user
+run_or_die "chroot $ROOTFS_DIR useradd -r -U ndr"
 mkdir -p $ROOTFS_DIR/etc/ndr
 run_or_die "cp configs/$NDR_CONFIG/ndr/config.yml $ROOTFS_DIR/etc/ndr"
 run_or_die "cp configs/$NDR_CONFIG/ndr/ca.crt $ROOTFS_DIR/etc/ndr"
@@ -206,9 +218,15 @@ run_or_die "cp configs/$NDR_CONFIG/uucp/call $ROOTFS_DIR/etc/uucp/call"
 run_or_die "cp configs/$NDR_CONFIG/uucp/port $ROOTFS_DIR/etc/uucp/port"
 run_or_die "cp configs/$NDR_CONFIG/uucp/sys $ROOTFS_DIR/etc/uucp/sys"
 run_or_die "cp configs/$NDR_CONFIG/cron/uucp $ROOTFS_DIR/etc/cron.d/uucp"
+run_or_die "chroot $ROOTFS_DIR chown ndr:ndr -R /etc/ndr"
+
+# Enable COM1 login
+run_or_die "chroot $ROOTFS_DIR ln -s /usr/lib/systemd/system/getty@.service   /etc/systemd/system/getty.target.wants/getty@ttyS0.service"
 
 # Copy in rc.local
 cp configs/common/rc.local $ROOTFS_DIR/etc/rc.local
+run_or_die "cp configs/common/postfix/aliases $ROOTFS_DIR/etc/postfix"
+run_or_die "chroot $ROOTFS_DIR newaliases"
 
 echo "=== Writing out the fstab ==="
 mkdir $ROOTFS_DIR/persistant

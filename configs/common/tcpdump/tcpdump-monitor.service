@@ -5,7 +5,8 @@ After=syslog-ng.service network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/mkdir -p /persistant/tcpdump/all-traffic
-ExecStart=/usr/sbin/tcpdump -w /persistant/tcpdump/all-traffic/all-traffic-%Y-%M-%d_%H.%M.%S.pcap -G 900 -i lan0
+ExecStartPre=/bin/chown ndr:ndr -R /persistant/tcpdump
+ExecStart=/usr/sbin/tcpdump -w /persistant/tcpdump/all-traffic/all-traffic-%Y-%M-%d_%H.%M.%S.pcap -z /usr/local/bin/ndr-pcap-processor -G 900 -i monitor0 -Z ndr
 KillMode=process
 
 [Install]
