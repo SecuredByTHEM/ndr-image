@@ -11,7 +11,7 @@ DEVELOPMENT_PACKAGES="build-essential python3-dev libffi-dev libssl-dev libpcap-
 MOUNT_POINT=mnt
 
 DAQ_URL="https://snort.org/downloads/snort/daq-2.0.6.tar.gz"
-SNORT_URL="https://snort.org/downloads/snort/snort-2.9.9.0.tar.gz"
+SNORT_URL="https://snort.org/downloads/snort/snort-2.9.11.1.tar.gz"
 NMAP_URL="https://nmap.org/dist/nmap-7.60.tar.bz2"
 
 while getopts ":d:b:" opt; do
